@@ -4,6 +4,8 @@ from src.agents.agent import Agent
 
 
 class PricingAgent(Agent):
+    """Represents an abstract agent that interacts with
+    the pricing problem."""
 
     @abstractmethod
     def get_price(self) -> float:
