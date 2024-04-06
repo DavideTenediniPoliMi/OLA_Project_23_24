@@ -20,4 +20,4 @@ auction:
     max: 20
 
 # Logger
-log_path: ".\\src\\logger\\logs\\"
+log_path: ".\\logger\\logs\\"

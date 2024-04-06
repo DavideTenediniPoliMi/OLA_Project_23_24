@@ -1,5 +1,5 @@
-from src.config.config import load_config
-from src.logger.logger import Logger
+from config.config import load_config
+from logger.logger import Logger
 
 
 config = load_config()

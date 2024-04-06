@@ -3,8 +3,8 @@ from random import random
 from rich.progress import track
 from src.agents.bidding.random_bidding_agent import RandomBiddingAgent
 from src.agents.pricing.random_pricing_agent import RandomPricingAgent
-from src.config.config import load_config
-from src.logger.logger import Logger
+from config.config import load_config
+from logger.logger import Logger
 from src.auctions.random_auction import RandomAuction
 
 

@@ -1,6 +1,6 @@
 from abc import ABC
 
-from src.logger.logger import Logger
+from logger.logger import Logger
 
 
 class Agent(ABC):

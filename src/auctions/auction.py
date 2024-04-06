@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Tuple
 from numpy import ndarray
 from scipy.stats import truncnorm, randint
 
-from src.logger.logger import Logger
+from logger.logger import Logger
 
 
 class Auction(ABC):
