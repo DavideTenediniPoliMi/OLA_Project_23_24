@@ -1,61 +1,49 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
-from numpy import ndarray
-from scipy.stats import randint, truncnorm
-
-from logger.logger import Logger
+from src.opponents.opponent_factory import OpponentFactory
 
 
 class Auction(ABC):
 
-    def __init__(self, n_opponents_dist_params: Dict[str, Any]) -> None:
-        self.player_bid: float
-        self.n_opponents: int
+    def __init__(
+        self,
+        opponents_params: Dict[str, Any],
+    ) -> None:
+        # Build opponents
+        factory = OpponentFactory(opponents_params)
+        self.opponenents = factory.build_opponents()
+        self.n_opponents: int = len(self.opponenents)
+        # Compute opponents' bids
+        self.n_bidders: int = self.n_opponents
+        self._bids: List[float] = []
 
-        self._init_n_opponents(n_opponents_dist_params)
-        self._init_opponents_bids()
+        for opponent in self.opponenents:
+            self._bids.append(opponent.get_bid())
 
-    def _init_n_opponents(self, params) -> None:
-        match params["type"]:
-            case "trunc_normal":
-                loc, scale = params["mean"], params["std"]
-                # a, b in truncnorm are the number of std, so we need to
-                # transform the abscissae value
-                a = (params["min"] - loc) / scale
-                b = (params["max"] - loc) / scale
-                self.n_opponents = int(
-                    truncnorm.rvs(a, b, loc=loc, scale=scale)
-                )
-            case "constant":
-                self.n_opponents = params["mean"]
-            case "uniform":
-                self.n_opponents = randint.rvs(params["min"], params["max"])
-            case _:
-                raise NotImplementedError(
-                    "Distribution for the number of "
-                    + "opponents in the auction is not supported"
-                )
+    def join(self) -> int:
+        """Add a new bidder to the aution. Return its id number."""
+        self.n_bidders += 1
+        self._bids.append(None)
+        return self.n_bidders - 1
 
-        Logger.info(f"This auction has {self.n_opponents + 1} participants")
-
-    def place_bid(self, bid: float) -> None:
-        """Places the bid of the player."""
-        self.player_bid = bid
+    def place_bid(self, id: int, bid: float) -> None:
+        """Places the bid of the player `id`."""
+        assert self.n_opponents <= id < self.n_bidders, "Unkown player!"
+        self._bids[id] = bid
 
     @abstractmethod
-    def did_win(self) -> Tuple[bool, float | None]:
+    def _declare_winner(self) -> None:
+        """Compute the winner's id for this auction"""
+        pass
+
+    @abstractmethod
+    def did_win(self, id: int) -> Tuple[bool, float | None]:
         """
-        Returns whether the player won the auction. If it did, then it
-        also returns the cost that the player has incurred.
+        Returns whether the player with `id` won the auction. If it did,
+        then it also returns the cost that the player has incurred.
 
         Returns:
-            A bool indicating if the player won or not. If it won, then
-            a Typle with also the cost incurred.
+            A bool indicating if the player won or not. If it won, the
+            Tuple also has the cost incurred.
         """
-        pass
-
-    @abstractmethod
-    def _init_opponents_bids(self) -> int | ndarray:
-        """Return the bids of the opponents."""
-        pass
