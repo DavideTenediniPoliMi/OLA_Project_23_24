@@ -8,5 +8,5 @@ class BiddingAgent(Agent):
     the bidding problem."""
 
     @abstractmethod
-    def get_bid(self) -> float:
+    def get_bid(self, day: int, auction_num: int) -> float:
         """Return the bid chosen by this agent."""

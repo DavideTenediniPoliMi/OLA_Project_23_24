@@ -1,5 +1,6 @@
 from typing import Any, Dict
-from scipy.stats import truncnorm, randint
+
+from scipy.stats import randint, truncnorm
 
 from src.opponents.random_opponent import RandomOpponent
 

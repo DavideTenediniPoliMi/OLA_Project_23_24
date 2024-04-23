@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
+
 from src.auctions.auction import Auction
 
 

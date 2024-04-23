@@ -1,23 +1,64 @@
-# Environment params
-sim_length: 90 # [days]
-# Supported simulations types are:
-# - "pricing": runs only the pricing algorithm
-# - "bidding": runs only the bidding algorithm
-# - "both": runs the full simulation with the algorithms interacting with each other
-type: "both"
-n_steps_per_day: 10 # Number of auctions/user interactions to run each day.
-# Auction params
-auction:
-  n_opponents_dist:
-    # Supported n_opponents distribution types are:
-    # - "trunc_normal": normal distribution with (mean, std) truncated between min and max
-    # - "constant": constant at mean
-    # - "uniform": uniform between min and max
-    type: "trunc_normal"
-    mean: 10
-    std: 3
-    min: 0
-    max: 20
+# DEFAULT SETTINGS
+defaults: &defaults
+  sim_length: 90 # [days]
+  # Supported simulations types are:
+  # - "pricing": runs only the pricing algorithm
+  # - "bidding": runs only the bidding algorithm
+  # - "both": runs the full simulation with the algorithms interacting with each other
+  type: "both"
+  n_users: 10 # Number of auctions/user interactions to run each day.
+  # Auction params
+  auction: &auction
+    type: "random"
+    agents:
+      - type: "random"
+        count: 1
+    opponents: &opponents
+      # Supported n_opponents distribution types are:
+      # - "trunc_normal": normal distribution with (mean, std) truncated between min and max
+      # - "constant": constant at mean
+      # - "uniform": uniform between min and max
+      n_dist:
+        type: "constant"
+        mean: 10
+        std: null
+        min: null
+        max: null
+      type: "random"
+  pricing: &pricing
+    num_items: 1 
+    agents:
+      - type: "random"
+        count: 1
+
+# SETTINGS FOR EACH REQUIREMENT
+req_1:
+  <<: *defaults
+  auction: 
+    <<: *auction
+    type: "second_price"
+req_2:
+  <<: *defaults
+  auction:
+    <<: *auction
+    type: "generalized_first_price"
+req_3:
+  <<: *defaults
+  type: "pricing"
+req_3_bonus:
+  <<: *defaults
+  type: "pricing"
+  pricing: 
+    <<: *pricing
+    num_items: 2
+req_4:
+  <<: *defaults
+  type: "bidding"
+  auction:
+    <<: *auction
+    agents:
+      - type: "random"
+        count: 4
 
 # Logger
 log_path: ".\\logger\\logs\\"

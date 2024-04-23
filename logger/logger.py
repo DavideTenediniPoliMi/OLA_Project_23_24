@@ -1,14 +1,14 @@
 import logging
 import os
 from datetime import datetime as dt
-from typing import Self
+from typing import Optional, Self
 
 
 class Logger:
     """Static utility class that provides an unified logging experience."""
 
-    debugger: logging.Logger
-    infoer: logging.Logger
+    debugger: Optional[logging.Logger] = None
+    infoer: Optional[logging.Logger] = None
 
     # Prevent instantiation
     def __new__(cls) -> Self:
@@ -16,37 +16,36 @@ class Logger:
 
     @staticmethod
     def init(path_to_folder: str = "") -> None:
-        Logger.debugger = logging.getLogger("my_debugger")
-        Logger.debugger.setLevel(logging.DEBUG)
+        Logger.path = path_to_folder
 
-        Logger.infoer = logging.getLogger("my_infoer")
-        Logger.infoer.setLevel(logging.INFO)
+    @staticmethod
+    def debug(*message: str) -> None:
+        if Logger.debugger == None:
+            Logger.debugger = Logger.lazy_init("my_debugger", logging.DEBUG)
+        Logger.debugger.debug(" ".join([str(m) for m in message]))
 
-        fh_debug = logging.FileHandler(
-            path_to_folder
-            + "debug\\"
+    @staticmethod
+    def info(*message) -> None:
+        if Logger.infoer == None:
+            Logger.infoer = Logger.lazy_init("my_infoer", logging.INFO)
+        Logger.infoer.info(" ".join([str(m) for m in message]))
+
+    @staticmethod
+    def lazy_init(name, level) -> None:
+        logger = logging.getLogger(name)
+        logger.setLevel(level)
+
+        fh = logging.FileHandler(
+            Logger.path
+            + name
+            + "\\"
             + str(dt.now().strftime("%Y%m%d-%H%M%S"))
             + ".log"
         )
-        fh_debug.setLevel(logging.DEBUG)
-        Logger.debugger.addHandler(fh_debug)
+        fh.setLevel(level)
+        logger.addHandler(fh)
 
-        fh_info = logging.FileHandler(
-            path_to_folder
-            + "info\\"
-            + str(dt.now().strftime("%Y%m%d-%H%M%S"))
-            + ".log"
-        )
-        fh_info.setLevel(logging.INFO)
-        Logger.infoer.addHandler(fh_info)
-
-    @staticmethod
-    def debug(message: str) -> None:
-        Logger.debugger.debug(message)
-
-    @staticmethod
-    def info(message: str) -> None:
-        Logger.infoer.info(message)
+        return logger
 
     @staticmethod
     def clear_logs(path: str) -> None:

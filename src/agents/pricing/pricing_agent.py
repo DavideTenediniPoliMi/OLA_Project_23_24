@@ -8,5 +8,5 @@ class PricingAgent(Agent):
     the pricing problem."""
 
     @abstractmethod
-    def get_price(self) -> float:
+    def get_price(self, day: int) -> float:
         """Return the price chosen by this agent."""
