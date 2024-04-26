@@ -11,6 +11,7 @@ from src.agents.bidding.bidding_agent_factory import BiddingAgentFactory
 from src.agents.pricing.pricing_agent import PricingAgent
 from src.agents.pricing.pricing_agent_factory import PricingAgentFactory
 from src.auctions.auction_factory import AuctionFactory
+from src.users.user_factory import UserFactory
 
 
 class Simulation:
@@ -24,9 +25,10 @@ class Simulation:
         self.config = config
         self.pricing_agents: List[PricingAgent] = []
         self.bidding_agents: List[BiddingAgent] = []
-
+        self.user_factory = UserFactory(config["users"])
         self.init_agents()
 
+        # Prep Stats
         self.bids = np.empty(
             (
                 len(self.bidding_agents),
@@ -64,7 +66,8 @@ class Simulation:
                     agent.get_price(day_num) for agent in self.pricing_agents
                 ]
 
-            for auction_num in range(config["n_users"]):
+            users = self.user_factory.build_users()
+            for auction_num, user in enumerate(users):
                 won = True
                 CTR = 1
                 if config["type"] != "pricing":
@@ -82,7 +85,8 @@ class Simulation:
                     results = [auction.did_win(id) for id in ids]
 
                 if config["type"] != "bidding":
-                    # TODO implement client
+                    # IF WON (or just pricing) make every user buy TODO
+                    user.does_buy(self.prices[0, day_num])
                     pass
 
 
