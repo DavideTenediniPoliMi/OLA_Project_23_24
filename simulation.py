@@ -29,18 +29,26 @@ class Simulation:
         self.init_agents()
 
         # Prep Stats
-        self.bids = np.empty(
-            (
-                len(self.bidding_agents),
-                config["sim_length"],
-                config["n_users"],
-            ),
-            dtype=float,
-        )
         self.prices = np.empty(
             (
                 len(self.pricing_agents),
                 config["sim_length"],
+            ),
+            dtype=float,
+        )
+        self.bids = np.empty(
+            (
+                len(self.bidding_agents),
+                config["sim_length"],
+                self.user_factory.n_users,
+            ),
+            dtype=float,
+        )
+        self.budgets = np.empty(
+            (
+                len(self.bidding_agents),
+                config["sim_length"] + 1,
+                self.user_factory.n_users,
             ),
             dtype=float,
         )
@@ -57,6 +65,11 @@ class Simulation:
                     PricingAgentFactory.build_agent(agent)
                 )
 
+        if self.config["type"] == "both":
+            assert len(self.bidding_agents) == len(
+                self.pricing_agents
+            ), "Number of Pricing and Bidding agents don't match"
+
     def run(self):
         for day_num in track(
             range(config["sim_length"]), description="Simulating..."
@@ -68,12 +81,17 @@ class Simulation:
 
             users = self.user_factory.build_users()
             for auction_num, user in enumerate(users):
-                won = True
                 CTR = 1
+                won = [True] * len(self.bidding_agents)
                 if config["type"] != "pricing":
+                    self.budgets[:, day_num, auction_num] = [
+                        agent.budget for agent in self.bidding_agents
+                    ]
+
                     auction = AuctionFactory.build_auction(
                         config["auction"], day_num, auction_num
                     )
+                    # TODO add agent ctr custom
                     ids = [auction.join(CTR) for agent in self.bidding_agents]
                     bids = [
                         agent.get_bid(day_num, auction_num)
@@ -83,11 +101,21 @@ class Simulation:
                     for id, bid in zip(ids, bids):
                         auction.place_bid(id, bid)
                     results = [auction.did_win(id) for id in ids]
+                    won = [res[0] for res in results]
+
+                    for i, w in enumerate(won):
+                        if w:
+                            self.bidding_agents[i].incur_cost(results[i][1])
 
                 if config["type"] != "bidding":
-                    # IF WON (or just pricing) make every user buy TODO
-                    user.does_buy(self.prices[0, day_num])
-                    pass
+                    for i, w in enumerate(won):
+                        if user.does_buy(self.prices[i, day_num]):
+                            pass  # TODO add revenue stats & update
+
+        if config["type"] != "pricing":
+            self.budgets[:, -1] = [
+                agent.budget for agent in self.bidding_agents
+            ]
 
 
 if __name__ == "__main__":

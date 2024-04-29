@@ -6,6 +6,9 @@ class BiddingAgentFactory:
     def build_agent(agent):
         match agent["type"]:
             case "random":
-                return [RandomBiddingAgent() for _ in range(agent["count"])]
+                return [
+                    RandomBiddingAgent(agent["budget"])
+                    for _ in range(agent["count"])
+                ]
             case _:
                 raise NotImplementedError("Agent not supported!")
