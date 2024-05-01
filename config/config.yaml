@@ -1,6 +1,7 @@
 # DEFAULT SETTINGS
 defaults: &defaults
-  sim_length: 90 # [days]
+  sim_length: 10 # [days]
+  seed: 42
   # Supported simulations types are:
   # - "pricing": runs only the pricing algorithm
   # - "bidding": runs only the bidding algorithm
@@ -13,7 +14,7 @@ defaults: &defaults
     # - "uniform": uniform between min and max
     n_dist:
       type: "constant"
-      mean: 10
+      mean: 3
       std: null
       min: null
       max: null
@@ -47,7 +48,9 @@ defaults: &defaults
         max: null
       type: "random"
   pricing: &pricing
-    num_items: 1 
+    # TODO implement 2 items pricing
+    num_prods: 1
+    cost: 0.2
     agents:
       - type: "random"
         count: 1

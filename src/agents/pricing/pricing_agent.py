@@ -10,3 +10,7 @@ class PricingAgent(Agent):
     @abstractmethod
     def get_price(self, day: int) -> float:
         """Return the price chosen by this agent."""
+
+    @abstractmethod
+    def save_stats(self):
+        """Saves the stats needed by the agent."""

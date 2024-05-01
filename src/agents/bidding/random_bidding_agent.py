@@ -7,4 +7,7 @@ class RandomBiddingAgent(BiddingAgent):
     """Represents a bidding agent that chooses its bid randomly."""
 
     def get_bid(self, day: int, auction_num: int) -> float:
-        return random() * 100
+        return random()
+
+    def save_stats(self):
+        pass

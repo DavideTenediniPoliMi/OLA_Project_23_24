@@ -7,4 +7,7 @@ class RandomPricingAgent(PricingAgent):
     """Represents a pricing agent that chooses the price randomly."""
 
     def get_price(self, day: int) -> float:
-        return random() * 100
+        return random()
+
+    def save_stats(self):
+        pass

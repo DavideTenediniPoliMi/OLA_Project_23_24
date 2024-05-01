@@ -9,18 +9,20 @@ from src.auctions.second_price_auction import SecondPriceAuction
 
 
 class AuctionFactory:
-    @staticmethod
-    def build_auction(
-        auction: Dict[str, Any], day: int, auction_num: int
-    ) -> Auction:
-        match auction["type"]:
+    def __init__(self, auction: Dict[str, Any]) -> None:
+        self.auction = auction
+
+    def build_auction(self, day: int, auction_num: int) -> Auction:
+        match self.auction["type"]:
             case "random":
-                return RandomAuction(auction["opponents"], day, auction_num)
+                return RandomAuction(
+                    self.auction["opponents"], day, auction_num
+                )
             case "second_price":
                 return SecondPriceAuction(
-                    auction["opponents"], day, auction_num
+                    self.auction["opponents"], day, auction_num
                 )
             case "generalized_first_price":
-                return GeneralizedFirstPriceAuction(auction["opponents"])
+                return GeneralizedFirstPriceAuction(self.auction["opponents"])
             case _:
                 raise NotImplementedError("Auction type not supported!")

@@ -55,5 +55,5 @@ class Auction(ABC):
 
         Returns:
             A bool indicating if the player won or not. If it won, the
-            Tuple also has the cost incurred.
+            second element of the tuple is the cost incurred.
         """

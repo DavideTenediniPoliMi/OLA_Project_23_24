@@ -17,3 +17,7 @@ class BiddingAgent(Agent):
     @abstractmethod
     def get_bid(self, day: int, auction_num: int) -> float:
         """Return the bid chosen by this agent."""
+
+    @abstractmethod
+    def save_stats(self):
+        """Saves the stats needed by the agent."""
