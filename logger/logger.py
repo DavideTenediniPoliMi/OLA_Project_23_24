@@ -49,7 +49,7 @@ class Logger:
 
     @staticmethod
     def clear_logs(path: str) -> None:
-        for folder in ["debug\\", "info\\"]:
+        for folder in ["my_debugger\\", "my_infoer\\"]:
             dir_name = path + folder
             items = os.listdir(dir_name)
 

@@ -8,6 +8,7 @@ class BiddingAgent(Agent):
     the bidding problem."""
 
     def __init__(self, budget: float = 0) -> None:
+        super().__init__()
         self.budget = budget
 
     def incur_cost(self, cost: float) -> None:

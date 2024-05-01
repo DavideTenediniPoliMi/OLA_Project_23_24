@@ -83,6 +83,7 @@ req_4:
     agents:
       - type: "random"
         count: 4
+        budget: 50
 
 # Logger
 log_path: ".\\logger\\logs\\"

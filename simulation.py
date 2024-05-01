@@ -43,9 +43,9 @@ class Simulation:
         self.prices: np.ndarray  # [agent, day]
         self.profits: np.ndarray  # [agent, day]
         self.bids: np.ndarray  # [agent, day, auction]
-        # Budgets at the beginning of each auction of each day.
-        # The second dimension is num_days + 1 so that we can save the
-        # remaining budget after the last auction of the last day.
+        # Budgets after each auction of each day.
+        # The second dimension is num_days + 1. The first day is just to
+        # save the initial budgets of the agents.
         self.budgets: np.ndarray  # [agent, day, auction]
         self.wins: np.ndarray  # [agent, day, auction]
         self.costs: np.ndarray  # [agent, day, auction]
@@ -64,12 +64,14 @@ class Simulation:
                 self.pricing_agents.extend(
                     PricingAgentFactory.build_agent(agent)
                 )
+            self.num_agents = len(self.pricing_agents)
 
         if self.BIDDING:
             for agent in bidding_agents:
                 self.bidding_agents.extend(
                     BiddingAgentFactory.build_agent(agent)
                 )
+            self.num_agents = len(self.bidding_agents)
 
         if self.type == "both":
             assert len(self.bidding_agents) == len(
@@ -78,46 +80,26 @@ class Simulation:
 
     def init_stats(self):
         if self.PRICING:
-            self.prices = np.empty(
-                (len(self.pricing_agents), self.length),
-                dtype=float,
-            )
+            self.prices = np.empty((self.num_agents, self.length), dtype=float)
             self.profits = np.empty(
-                (len(self.pricing_agents), self.length),
-                dtype=float,
+                (self.num_agents, self.length), dtype=float
             )
 
         if self.BIDDING:
             self.bids = np.empty(
-                (
-                    len(self.bidding_agents),
-                    self.length,
-                    self.user_factory.n_users,
-                ),
+                (self.num_agents, self.length, self.user_factory.n_users),
                 dtype=float,
             )
             self.budgets = np.empty(
-                (
-                    len(self.bidding_agents),
-                    self.length + 1,
-                    self.user_factory.n_users,
-                ),
+                (self.num_agents, self.length + 1, self.user_factory.n_users),
                 dtype=float,
             )
             self.wins = np.empty(
-                (
-                    len(self.bidding_agents),
-                    self.length,
-                    self.user_factory.n_users,
-                ),
+                (self.num_agents, self.length, self.user_factory.n_users),
                 dtype=bool,
             )
             self.costs = np.empty(
-                (
-                    len(self.bidding_agents),
-                    self.length,
-                    self.user_factory.n_users,
-                ),
+                (self.num_agents, self.length, self.user_factory.n_users),
                 dtype=float,
             )
 
@@ -125,8 +107,8 @@ class Simulation:
             starting_budget = np.array(
                 [agent.budget for agent in self.bidding_agents]
             ).reshape(-1, 1)
-            self.budgets[:, -1] = np.repeat(
-                starting_budget, self.budgets.shape[2]
+            self.budgets[:, 0] = np.repeat(
+                starting_budget, self.budgets.shape[2], axis=1
             )
 
     def run(self):
@@ -167,13 +149,13 @@ class Simulation:
 
         users = self.user_factory.build_users()
         for auction_num, user in enumerate(users):
-            won = [True] * len(self.bidding_agents)
+            won = [True] * self.num_agents
             if self.BIDDING:
                 won = self.run_auction(day_num, auction_num, user)
 
             if self.PRICING:
                 # Make user buy the products
-                bought = [False] * len(self.pricing_agents)
+                bought = [False] * self.num_agents
                 for i, w in enumerate(won):
                     if not w:
                         continue
@@ -182,10 +164,11 @@ class Simulation:
                         pass  # TODO update
 
         # Save Statistics
-        self.prices[:, day_num] = prices
-        self.profits[:, day_num] = np.where(
-            bought, np.array(prices) - self.cost, 0
-        )
+        if self.PRICING:
+            self.prices[:, day_num] = prices
+            self.profits[:, day_num] = np.where(
+                bought, np.array(prices) - self.cost, 0
+            )
 
     def run_auction(self, day_num, auction_num, user) -> List[bool]:
         CTR = 1
@@ -215,7 +198,7 @@ class Simulation:
             c if c != None else 0 for c in results[:, 1]
         ]
         self.bids[:, day_num, auction_num] = bids
-        self.budgets[:, day_num, auction_num] = [
+        self.budgets[:, day_num + 1, auction_num] = [
             agent.budget for agent in self.bidding_agents
         ]
 
