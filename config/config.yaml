@@ -25,9 +25,6 @@ defaults: &defaults
     # - "logit" needs alpha and beta
     # - "kernel" needs alpha, beta, and gamma
     type: "random"
-    alpha: null
-    beta: null
-    gamma: null
   # Auction params
   auction: &auction
     type: "random"
@@ -51,13 +48,23 @@ defaults: &defaults
     # TODO implement 2 items pricing
     num_prods: 1
     cost: 0.2
-    agents:
-      - type: "random"
-        count: 1
+    agent:
+      type: "random"
 
 # SETTINGS FOR EACH REQUIREMENT
 req_1:
   <<: *defaults
+  pricing:
+    <<: *pricing
+    agent:
+      type: "gpucb"
+      T: 200
+      discretization: 1001
+  users:
+    <<: *users
+    type: linear
+    alpha: 1
+    beta: -1
   auction: 
     <<: *auction
     type: "second_price"

@@ -11,3 +11,6 @@ class RandomBiddingAgent(BiddingAgent):
 
     def save_stats(self):
         pass
+
+    def update(self, observation) -> None:
+        pass

@@ -1,6 +1,6 @@
-from array import array
 import random
 import sys
+from array import array
 from typing import List
 
 import numpy as np
@@ -18,16 +18,15 @@ from src.users.user_factory import UserFactory
 
 class Simulation:
     def __init__(self, config) -> None:
-        self.type = config["type"]
-        assert self.type in {
+        assert config["type"] in {
             "pricing",
             "bidding",
             "both",
         }, "Simulation type not supported!"
 
         # Flags to recognize if the pricing and bidding tasks are active
-        self.PRICING = self.type != "bidding"
-        self.BIDDING = self.type != "pricing"
+        self.PRICING = config["type"] != "bidding"
+        self.BIDDING = config["type"] != "pricing"
 
         # Congfigs
         self.length = config["sim_length"]
@@ -37,7 +36,7 @@ class Simulation:
         random.seed(config["seed"])
         np.random.seed(config["seed"])
         # Agents
-        self.pricing_agents: List[PricingAgent] = []
+        self.pricing_agent: PricingAgent
         self.bidding_agents: List[BiddingAgent] = []
         # Statistics
         self.prices: np.ndarray  # [agent, day]
@@ -54,17 +53,14 @@ class Simulation:
         self.user_factory = UserFactory(config["users"])
         self.auction_factory = AuctionFactory(config["auction"])
         self.init_agents(
-            config["pricing"]["agents"], config["auction"]["agents"]
+            config["pricing"]["agent"], config["auction"]["agents"]
         )
         self.init_stats()
 
-    def init_agents(self, pricing_agents, bidding_agents):
+    def init_agents(self, pricing_agent, bidding_agents):
         if self.PRICING:
-            for agent in pricing_agents:
-                self.pricing_agents.extend(
-                    PricingAgentFactory.build_agent(agent)
-                )
-            self.num_agents = len(self.pricing_agents)
+            self.pricing_agent = PricingAgentFactory.build_agent(pricing_agent)
+            self.num_agents = 1
 
         if self.BIDDING:
             for agent in bidding_agents:
@@ -73,16 +69,16 @@ class Simulation:
                 )
             self.num_agents = len(self.bidding_agents)
 
-        if self.type == "both":
-            assert len(self.bidding_agents) == len(
-                self.pricing_agents
-            ), "Number of Pricing and Bidding agents doesn't match"
+        if self.PRICING and self.BIDDING:
+            assert (
+                len(self.bidding_agents) == 1
+            ), "Only one agent allowed when pricing in active!"
 
     def init_stats(self):
         if self.PRICING:
-            self.prices = np.empty((self.num_agents, self.length), dtype=float)
+            self.prices = np.empty(self.length, dtype=float)
             self.profits = np.empty(
-                (self.num_agents, self.length), dtype=float
+                (self.length, self.user_factory.n_users), dtype=float
             )
 
         if self.BIDDING:
@@ -143,34 +139,33 @@ class Simulation:
     def run_day(self, day_num):
         if self.PRICING:
             # Make agents chhoose the prices
-            prices = [
-                agent.get_price(day_num) for agent in self.pricing_agents
-            ]
+            price = self.pricing_agent.get_price(day_num)
 
         users = self.user_factory.build_users()
+        if day_num == 0:
+            users[0].plot()
+        profits = [0] * self.user_factory.n_users
         for auction_num, user in enumerate(users):
             won = [True] * self.num_agents
             if self.BIDDING:
-                won = self.run_auction(day_num, auction_num, user)
+                won = self.run_auction(day_num, auction_num)
 
             if self.PRICING:
                 # Make user buy the products
-                bought = [False] * self.num_agents
-                for i, w in enumerate(won):
-                    if not w:
-                        continue
-                    if user.does_buy(prices[i]):
-                        bought[i] = True
-                        pass  # TODO update
+                # NOTE when pricing is active there's only one agent!!
+                won = won[0]
+                if won and user.does_buy(price):
+                    profits[auction_num] = price - self.cost
+
+        # Update agent with the profits for the day NORMALIZED
+        self.pricing_agent.update(sum(profits) / self.user_factory.n_users)
 
         # Save Statistics
         if self.PRICING:
-            self.prices[:, day_num] = prices
-            self.profits[:, day_num] = np.where(
-                bought, np.array(prices) - self.cost, 0
-            )
+            self.prices[day_num] = price
+            self.profits[day_num, :] = profits
 
-    def run_auction(self, day_num, auction_num, user) -> List[bool]:
+    def run_auction(self, day_num, auction_num) -> List[bool]:
         CTR = 1
         # Init auction
         auction = self.auction_factory.build_auction(day_num, auction_num)
@@ -213,8 +208,7 @@ class Simulation:
             Logger.info("Profits:")
             Logger.info(self.profits)
 
-            for agent in self.pricing_agents:
-                agent.save_stats()
+            self.pricing_agent.save_stats()
 
         if self.BIDDING:
             Logger.info("Bidding stats:")
