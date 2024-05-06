@@ -1,4 +1,5 @@
 from typing import Any, Dict, List
+
 from src.agents.bidding.bidding_agent import BiddingAgent
 from src.agents.bidding.random_bidding_agent import RandomBiddingAgent
 
