@@ -142,8 +142,6 @@ class Simulation:
             price = self.pricing_agent.get_price(day_num)
 
         users = self.user_factory.build_users()
-        if day_num == 0:
-            users[0].plot()
         profits = [0] * self.user_factory.n_users
         for auction_num, user in enumerate(users):
             won = [True] * self.num_agents
