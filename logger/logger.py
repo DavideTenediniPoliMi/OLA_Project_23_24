@@ -36,11 +36,11 @@ class Logger:
         logger.setLevel(level)
 
         fh = logging.FileHandler(
-            Logger.path
-            + name
-            + "\\"
-            + str(dt.now().strftime("%Y%m%d-%H%M%S"))
-            + ".log"
+            os.path.join(
+                Logger.path,
+                name,
+                str(dt.now().strftime("%Y%m%d-%H%M%S")) + ".log",
+            )
         )
         fh.setLevel(level)
         logger.addHandler(fh)
@@ -49,8 +49,8 @@ class Logger:
 
     @staticmethod
     def clear_logs(path: str) -> None:
-        for folder in ["my_debugger\\", "my_infoer\\"]:
-            dir_name = path + folder
+        for folder in ["my_debugger", "my_infoer"]:
+            dir_name = os.path.join(path, folder)
             items = os.listdir(dir_name)
 
             for item in items:

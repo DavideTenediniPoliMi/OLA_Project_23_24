@@ -1,20 +1,26 @@
 # DEFAULT SETTINGS
 defaults: &defaults
-  sim_length: 10 # [days]
+  trials: 10
+  verbose: true # Whether to save the stats of the trials in a log file
+  silent: false # Whether to show the trial progress in the terminal
   seed: 42
   # Supported simulations types are:
   # - "pricing": runs only the pricing algorithm
   # - "bidding": runs only the bidding algorithm
-  # - "both": runs the full simulation with the algorithms interacting with each other
+  # - "both": runs the full simulation where the advertisement campaign
+  #           (the bidding part) influences how many of the users
+  #           actually see the price of the product, and thus decide
+  #           whether to buy it or not.
   type: "both"
   users: &users
     # Supported n_opponents distribution types are:
-    # - "trunc_normal": normal distribution with (mean, std) truncated between min and max
+    # - "trunc_normal": normal distribution with (mean, std) truncated 
+    #                   between min and max
     # - "constant": constant at mean
     # - "uniform": uniform between min and max
     n_dist:
       type: "constant"
-      mean: 3
+      mean: 5
       std: null
       min: null
       max: null
@@ -34,7 +40,8 @@ defaults: &defaults
         budget: 50
     opponents: &opponents
       # Supported n_opponents distribution types are:
-      # - "trunc_normal": normal distribution with (mean, std) truncated between min and max
+      # - "trunc_normal": normal distribution with (mean, std) truncated
+      #                   between min and max
       # - "constant": constant at mean
       # - "uniform": uniform between min and max
       n_dist:
@@ -54,12 +61,12 @@ defaults: &defaults
 # SETTINGS FOR EACH REQUIREMENT
 req_1:
   <<: *defaults
+  type: "pricing"
   pricing:
     <<: *pricing
     agent:
       type: "gpucb"
-      T: 200
-      discretization: 1001
+      discretization: 101
   users:
     <<: *users
     type: linear
@@ -93,4 +100,4 @@ req_4:
         budget: 50
 
 # Logger
-log_path: ".\\logger\\logs\\"
+log_path: ".\\logger\\logs"

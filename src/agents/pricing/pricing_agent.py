@@ -12,9 +12,5 @@ class PricingAgent(Agent):
         """Return the price chosen by this agent."""
 
     @abstractmethod
-    def update(self, observation) -> None:
+    def update(self, reward: float) -> None:
         """Update the internal status of this agent after it acted."""
-
-    @abstractmethod
-    def save_stats(self):
-        """Saves the stats needed by the agent."""

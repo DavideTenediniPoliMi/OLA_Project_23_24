@@ -1,12 +1,12 @@
 import random
 import sys
-from array import array
 from typing import List
 
 import numpy as np
 from rich.progress import track
 
 from config.config import load_config
+from logger.jpegger import JPEGger
 from logger.logger import Logger
 from src.agents.bidding.bidding_agent import BiddingAgent
 from src.agents.bidding.bidding_agent_factory import BiddingAgentFactory
@@ -29,12 +29,16 @@ class Simulation:
         self.BIDDING = config["type"] != "pricing"
 
         # Congfigs
+        self.trials = config["trials"]
         self.length = config["sim_length"]
         self.cost = config["pricing"]["cost"]
         self.num_prods = config["pricing"]["num_prods"]
+        self.seed = config["seed"]
+        self.VERBOSE = config["verbose"]
+        self.SILENT = config["silent"]
         # Randomness
-        random.seed(config["seed"])
-        np.random.seed(config["seed"])
+        random.seed(self.seed)
+        np.random.seed(self.seed)
         # Agents
         self.pricing_agent: PricingAgent
         self.bidding_agents: List[BiddingAgent] = []
@@ -52,10 +56,14 @@ class Simulation:
         # Init simulation resources
         self.user_factory = UserFactory(config["users"])
         self.auction_factory = AuctionFactory(config["auction"])
+
+        # Inject useful parameters
+        config["pricing"]["agent"]["T"] = self.length
+        config["pricing"]["agent"]["trials"] = self.trials
+        config["pricing"]["agent"]["cost"] = self.cost
         self.init_agents(
             config["pricing"]["agent"], config["auction"]["agents"]
         )
-        self.init_stats()
 
     def init_agents(self, pricing_agent, bidding_agents):
         if self.PRICING:
@@ -133,8 +141,30 @@ class Simulation:
                 show the ad(s) of the winner(s) to the user
                 make user decide whether to buy based on the price
         """
-        for day_num in track(range(self.length), description="Simulating..."):
-            self.run_day(day_num)
+        for trial in range(self.trials):
+            days_range = range(self.length)
+
+            if self.VERBOSE:
+                Logger.info(f"Trial {trial + 1}:")
+            if not self.SILENT:
+                print(f"Trial {trial + 1}:")
+                days_range = track(days_range, description="Simulating...")
+
+            # Init trial
+            random.seed(self.seed + trial)
+            np.random.seed(self.seed + trial)
+            self.init_stats()
+            if self.PRICING:
+                self.pricing_agent.start_trial(trial)
+            if self.BIDDING:
+                for agent in self.bidding_agents:
+                    agent.start_trial(trial)
+
+            # Run trial
+            for day_num in days_range:
+                self.run_day(day_num)
+
+            self.save_trial_stats()
 
     def run_day(self, day_num):
         if self.PRICING:
@@ -143,6 +173,7 @@ class Simulation:
 
         users = self.user_factory.build_users()
         profits = [0] * self.user_factory.n_users
+        n_users_seen = 0
         for auction_num, user in enumerate(users):
             won = [True] * self.num_agents
             if self.BIDDING:
@@ -152,11 +183,18 @@ class Simulation:
                 # Make user buy the products
                 # NOTE when pricing is active there's only one agent!!
                 won = won[0]
-                if won and user.does_buy(price):
-                    profits[auction_num] = price - self.cost
+                if won:
+                    n_users_seen += 1
+                    if user.does_buy(price):
+                        profits[auction_num] = price - self.cost
 
-        # Update agent with the profits for the day NORMALIZED
-        self.pricing_agent.update(sum(profits) / self.user_factory.n_users)
+        # Update agent with the profits for the day normalized by the
+        # number of users that actually saw the price and decided
+        # whether to buy the product or not. If only PRICING is active
+        # then every user sees the price, if BOTH are active then the
+        # number of users that see the price depends on the bidding
+        # strategy.
+        self.pricing_agent.update(sum(profits) / n_users_seen)
 
         # Save Statistics
         if self.PRICING:
@@ -197,7 +235,10 @@ class Simulation:
 
         return won
 
-    def save_sim_stats(self) -> None:
+    def save_trial_stats(self) -> None:
+        if not self.VERBOSE:
+            return
+
         np.set_printoptions(threshold=np.inf)
         if self.PRICING:
             Logger.info("Pricing stats:")
@@ -205,8 +246,6 @@ class Simulation:
             Logger.info(self.prices)
             Logger.info("Profits:")
             Logger.info(self.profits)
-
-            self.pricing_agent.save_stats()
 
         if self.BIDDING:
             Logger.info("Bidding stats:")
@@ -219,6 +258,11 @@ class Simulation:
             Logger.info("Costs:")
             Logger.info(self.costs)
 
+    def save_sim_stats(self) -> None:
+        if self.PRICING:
+            self.pricing_agent.save_stats()
+
+        if self.BIDDING:
             for agent in self.bidding_agents:
                 agent.save_stats()
 
@@ -226,7 +270,8 @@ class Simulation:
 if __name__ == "__main__":
     config = load_config()
     Logger.init(config["log_path"])
-
+    JPEGger.init(config["log_path"])
+    # TODO arg parser
     # Load command line requirement specific simulation
     # If no arguments were passed just run with the defaults
     args = sys.argv[1:]
