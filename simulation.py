@@ -36,6 +36,8 @@ class Simulation:
         self.seed = config["seed"]
         self.VERBOSE = config["verbose"]
         self.SILENT = config["silent"]
+        self.discretization = config["discretization"]
+        self.price_values = np.linspace(0, 1, self.discretization)
         # Randomness
         random.seed(self.seed)
         np.random.seed(self.seed)
@@ -54,13 +56,17 @@ class Simulation:
         self.costs: np.ndarray  # [agent, day, auction]
 
         # Init simulation resources
-        self.user_factory = UserFactory(config["users"])
-        self.auction_factory = AuctionFactory(config["auction"])
+        if self.PRICING:
+            config["users"]["discretization"] = self.discretization
+            self.user_factory = UserFactory(config["users"])
+        if self.BIDDING:
+            self.auction_factory = AuctionFactory(config["auction"])
 
         # Inject useful parameters
         config["pricing"]["agent"]["T"] = self.length
         config["pricing"]["agent"]["trials"] = self.trials
         config["pricing"]["agent"]["cost"] = self.cost
+        config["pricing"]["agent"]["discretization"] = self.discretization
         self.init_agents(
             config["pricing"]["agent"], config["auction"]["agents"]
         )
@@ -171,21 +177,28 @@ class Simulation:
             # Make agents chhoose the prices
             price = self.pricing_agent.get_price(day_num)
 
-        users = self.user_factory.build_users()
+        typical_user = self.user_factory.build_user(day_num)
+        does_buy = np.empty(
+            (self.user_factory.n_users, self.discretization), dtype=bool
+        )
         profits = [0] * self.user_factory.n_users
-        n_users_seen = 0
-        for auction_num, user in enumerate(users):
+        for auction_num in range(self.user_factory.n_users):
+            if self.PRICING:
+                does_buy[auction_num, :] = typical_user.does_buy(
+                    self.price_values
+                )
             won = [True] * self.num_agents
             if self.BIDDING:
                 won = self.run_auction(day_num, auction_num)
 
             if self.PRICING:
                 # Make user buy the products
-                # NOTE when pricing is active there's only one agent!!
+                # NOTE when PRICING is active there's only one agent!!
                 won = won[0]
                 if won:
-                    n_users_seen += 1
-                    if user.does_buy(price):
+                    if does_buy[
+                        auction_num, int(price * (self.discretization - 1))
+                    ]:
                         profits[auction_num] = price - self.cost
 
         # Update agent with the profits for the day normalized by the
@@ -194,7 +207,15 @@ class Simulation:
         # then every user sees the price, if BOTH are active then the
         # number of users that see the price depends on the bidding
         # strategy.
-        self.pricing_agent.update(sum(profits) / n_users_seen)
+        if self.PRICING:
+            self.pricing_agent.update(sum(profits))
+            rewards = np.sum(does_buy, axis=0) * (
+                self.price_values - self.cost
+            )
+            best_price_idx = np.argmax(rewards, keepdims=True)[0]
+            self.pricing_agent.update_regret(
+                best_price_idx, rewards[best_price_idx]
+            )
 
         # Save Statistics
         if self.PRICING:
@@ -261,6 +282,7 @@ class Simulation:
     def save_sim_stats(self) -> None:
         if self.PRICING:
             self.pricing_agent.save_stats()
+            self.user_factory.save_stats()
 
         if self.BIDDING:
             for agent in self.bidding_agents:

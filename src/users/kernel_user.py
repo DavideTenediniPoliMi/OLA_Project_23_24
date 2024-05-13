@@ -1,4 +1,4 @@
-from math import exp, pi, sin
+import numpy as np
 
 from src.users.user import User
 
@@ -10,8 +10,10 @@ class KernelUser(User):
         self.beta = beta
         self.gamma = gamma
 
-    def _get_prob(self, p: float) -> float:
+    def _get_prob(self, p: float | np.ndarray) -> float | np.ndarray:
         return (
-            abs(sin(2 * pi * p) * exp(-self.alpha * p) + self.beta * p)
+            np.abs(
+                np.sin(2 * np.pi * p) * np.exp(-self.alpha * p) + self.beta * p
+            )
             + self.gamma
         )

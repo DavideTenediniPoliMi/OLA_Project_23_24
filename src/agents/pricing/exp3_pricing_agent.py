@@ -14,7 +14,7 @@ class EXP3PricingAgent(ArmPullingAgent, PricingAgent):
         discretization: int,
         cost: float,
     ) -> None:
-        super().__init__(trials, discretization)
+        super().__init__(trials, T, discretization)
         # Parameters
         self.learning_rate = math.sqrt(
             math.log(discretization) / (discretization * T)

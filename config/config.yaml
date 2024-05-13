@@ -3,6 +3,8 @@ defaults: &defaults
   trials: 10
   verbose: true # Whether to save the stats of the trials in a log file
   silent: false # Whether to show the trial progress in the terminal
+  sim_length: 150 # [days]
+  discretization: 101
   seed: 42
   # Supported simulations types are:
   # - "pricing": runs only the pricing algorithm
@@ -66,7 +68,6 @@ req_1:
     <<: *pricing
     agent:
       type: "gpucb"
-      discretization: 101
   users:
     <<: *users
     type: linear

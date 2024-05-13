@@ -9,9 +9,7 @@ from src.utils.rbf_gaussian_process import RBFGaussianProcess
 
 class GPUCBPricingAgent(ArmPullingAgent, PricingAgent):
     def __init__(self, trials, T: int, discretization: int) -> None:
-        super().__init__(trials, discretization)
-        # Time Horizon
-        self.T = T
+        super().__init__(trials, T, discretization)
 
     def gamma(self, t) -> float:
         return math.log(t + 1) ** 2

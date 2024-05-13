@@ -8,9 +8,7 @@ from src.agents.pricing.pricing_agent import PricingAgent
 
 class UCB1PricingAgent(ArmPullingAgent, PricingAgent):
     def __init__(self, trials: int, T: int, discretization: int) -> None:
-        super().__init__(trials, discretization)
-        # Time Horizon
-        self.T = T
+        super().__init__(trials, T, discretization)
         # Means for the UCBs
         self.avg_rewards: np.ndarray
         # Another alias for ArmPullingAgent.N_pulls, except it's an
