@@ -3,7 +3,7 @@ defaults: &defaults
   trials: 10
   verbose: true # Whether to save the stats of the trials in a log file
   silent: false # Whether to show the trial progress in the terminal
-  sim_length: 150 # [days]
+  sim_length: 500 # [days]
   discretization: 101
   seed: 42
   # Supported simulations types are:
@@ -22,7 +22,7 @@ defaults: &defaults
     # - "uniform": uniform between min and max
     n_dist:
       type: "constant"
-      mean: 5
+      mean: 200
       std: null
       min: null
       max: null
@@ -63,11 +63,11 @@ defaults: &defaults
 # SETTINGS FOR EACH REQUIREMENT
 req_1:
   <<: *defaults
-  type: "pricing"
+  type: "bidding"
   pricing:
     <<: *pricing
     agent:
-      type: "gpucb"
+      type: "ucb1"
   users:
     <<: *users
     type: linear
@@ -76,6 +76,7 @@ req_1:
   auction: 
     <<: *auction
     type: "second_price"
+    
 req_2:
   <<: *defaults
   auction:

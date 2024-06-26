@@ -4,6 +4,7 @@ import numpy as np
 
 from src.agents.arm_pullin_agent import ArmPullingAgent
 from src.agents.pricing.pricing_agent import PricingAgent
+from src.utils.my_argmax import my_argmax
 from src.utils.rbf_gaussian_process import RBFGaussianProcess
 
 
@@ -22,7 +23,7 @@ class GPUCBPricingAgent(ArmPullingAgent, PricingAgent):
 
         # Compute the UCBs for the prices and choose the best one
         ucbs = mu + self.beta(day) * sigma
-        best_price_idx = np.argmax(ucbs)
+        best_price_idx = my_argmax(ucbs)
         best_price = self.arms[best_price_idx]
 
         # Update stats

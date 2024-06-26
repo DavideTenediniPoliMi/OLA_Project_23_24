@@ -7,8 +7,10 @@ class BiddingAgent(Agent):
     """Represents an abstract agent interacting with
     the bidding problem."""
 
-    def __init__(self, budget: float = 0) -> None:
+    def __init__(self, T: int, valuation: float, budget: float = 0) -> None:
         super().__init__()
+        self.T = T
+        self.valuation = valuation
         self.budget = budget
 
     def incur_cost(self, cost: float) -> None:

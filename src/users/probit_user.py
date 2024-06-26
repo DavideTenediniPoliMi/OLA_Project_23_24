@@ -6,7 +6,9 @@ from src.users.user import User
 
 class ProbitUser(User):
     def __init__(self, alpha: float, beta: float) -> None:
-        assert alpha != None and beta != None, "Invalid Parameters!"
+        assert (
+            alpha != None and beta != None and beta < 0
+        ), "Invalid Parameters!"
         self.alpha = alpha
         self.beta = beta
 

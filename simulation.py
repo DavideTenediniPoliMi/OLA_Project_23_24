@@ -14,6 +14,7 @@ from src.agents.pricing.pricing_agent import PricingAgent
 from src.agents.pricing.pricing_agent_factory import PricingAgentFactory
 from src.auctions.auction_factory import AuctionFactory
 from src.users.user_factory import UserFactory
+from src.utils.my_argmax import my_argmax
 
 
 class Simulation:
@@ -78,6 +79,7 @@ class Simulation:
 
         if self.BIDDING:
             for agent in bidding_agents:
+                agent["T"] = self.length * self.user_factory.n_users
                 self.bidding_agents.extend(
                     BiddingAgentFactory.build_agent(agent)
                 )
@@ -212,7 +214,7 @@ class Simulation:
             rewards = np.sum(does_buy, axis=0) * (
                 self.price_values - self.cost
             )
-            best_price_idx = np.argmax(rewards, keepdims=True)[0]
+            best_price_idx = my_argmax(rewards)
             self.pricing_agent.update_regret(
                 best_price_idx, rewards[best_price_idx]
             )

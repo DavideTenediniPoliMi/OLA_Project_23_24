@@ -30,17 +30,15 @@ class ArmPullingAgent(Agent):
         self.optimal_arm.append(best_price_idx)
 
     def save_stats(self):
-        most_common_best_arm = Counter(
-            np.asarray(self.optimal_arm_t).ravel()
-        ).most_common(1)[0][0]
-
         super().save_stats()
         fig = plt.figure()
         plt.barh(
             np.arange(len(self.arms)),
             np.mean(self.N_pulls_t, axis=0),
         )
-        plt.axhline(most_common_best_arm, color='red', label='Best price')
+        plt.axhline(
+            np.median(self.optimal_arm_t), color='red', label='Best price'
+        )
         plt.ylabel('actions')
         plt.xlabel('numer of pulls')
         plt.title('Avg Number of pulls for each action')
